@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"micro-tetzner-cloud-alarm/v2/app/config"
+	bstore "micro-tetzner-cloud-alarm/v2/app/store"
 	"micro-tetzner-cloud-alarm/v2/app/task"
 	"os"
 	"os/signal"
@@ -14,9 +15,10 @@ import (
 )
 
 type Options struct {
-	Config    string        `short:"c" long:"config" env:"CONFIG" default:"config.yml" description:"config file"`
-	Dbg       bool          `long:"dbg" env:"DEBUG" description:"show debug info"`
-	Frequency time.Duration `long:"frequency" env:"FREQUENCY" default:"10m" description:"task scheduler frequency in minutes"`
+	Config      string        `short:"c" long:"config" env:"CONFIG" default:"config.yml" description:"config file"`
+	Dbg         bool          `long:"dbg" env:"DEBUG" description:"show debug info"`
+	Frequency   time.Duration `long:"frequency" env:"FREQUENCY" default:"10m" description:"task scheduler frequency in minutes"`
+	StoragePath string        `short:"s" long:"storage_path" default:"/var/tmp/jtrw_hetzner_cloud.db" description:"Storage Path"`
 }
 
 var revision string
@@ -48,6 +50,20 @@ func main() {
 		log.Printf("[WARN] Interrupted signal")
 		cancel()
 	}()
+
+	sec := bstore.Store{
+		StorePath: opts.StoragePath,
+	}
+
+	sec.JBolt = sec.NewStore()
+
+	t := task.Task{
+		Owner:   task.TASK_OWNER_SYSTEM,
+		Config:  cnf,
+		Context: ctx,
+		Store:   sec,
+	}
+	t.Run()
 
 	for {
 		select {
