@@ -96,7 +96,6 @@ func (t Task) Run() {
 			}
 
 			t.Store.Save(&msg)
-
 		}
 
 		//for _, server := range dataJson["servers"].(map[string]interface{}) {
