@@ -82,7 +82,6 @@ func (t Task) Run() {
 		}
 
 		for _, server := range res.Servers {
-
 			if t.Store.Get(service.Ident, server.PublicNet.Ipv4.Ip) != "" {
 				log.Printf("Server %s already exists", server.Name)
 				continue
@@ -97,23 +96,5 @@ func (t Task) Run() {
 
 			t.Store.Save(&msg)
 		}
-
-		//for _, server := range dataJson["servers"].(map[string]interface{}) {
-		//	serverJson := server.(bstore.JSON)
-		//	log.Printf("Server: %s", server["name"].(string))
-		// serverName := server.(bstore.JSON)["name"].(string)
-		// serverIP := server.(bstore.JSON)["ip"].(string)
-
-		// msg := bstore.Message{
-		// 	Key:    serverIP,
-		// 	Bucket: service.Ident,
-		// 	Type:   "server",
-		// 	Data:   serverName,
-		// 	//	DataJson: serverJson,
-		// }
-
-		// t.Store.Save(&msg)
-		//}
-
 	}
 }

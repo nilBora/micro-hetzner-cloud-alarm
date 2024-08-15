@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"micro-tetzner-cloud-alarm/v2/app/config"
 	bstore "micro-tetzner-cloud-alarm/v2/app/store"
 	"micro-tetzner-cloud-alarm/v2/app/task"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,6 +25,8 @@ type Options struct {
 }
 
 var revision string
+
+type JSON map[string]interface{}
 
 func main() {
 	log.Printf("[INFO] Micro HCA: %s\n", revision)
@@ -56,6 +61,42 @@ func main() {
 	}
 
 	sec.JBolt = sec.NewStore()
+
+	httpClient := http.Client{}
+	for _, task := range cnf.Task {
+		if task.Type == "fetch" {
+			req, err := http.NewRequest("GET", task.Url, nil)
+			if err != nil {
+				log.Printf("[ERROR] %s", err)
+				continue
+			}
+			for _, header := range task.Headers {
+				log.Printf("[INFO] %s", header)
+				req.Header.Set(header.Name, header.Value)
+			}
+			//req.Header.Set("Authorization", "Bearer "+service.Token)
+
+			resp, err := httpClient.Do(req)
+			if err != nil {
+				log.Printf("[ERROR] %s", err)
+				continue
+			}
+
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				log.Printf("[ERROR] %s", err)
+				continue
+			}
+			response := JSON{}
+
+			json.Unmarshal(body, &response)
+
+			//log.Printf("[INFO] %s", body)
+
+		}
+	}
 
 	t := task.Task{
 		Owner:   task.TASK_OWNER_SYSTEM,
