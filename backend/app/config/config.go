@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	Service []Service `yaml:"services"`
+	Task    []Task    `yaml:"tasks"`
 }
 
 type Service struct {
@@ -16,6 +17,16 @@ type Service struct {
 	URL     string   `yaml:"url"`
 	Token   string   `yaml:"token"`
 	Headers []Header `yaml:"headers"`
+}
+
+type Task struct {
+	Name           string   `yaml:"name"`
+	Type           string   `yaml:"type"`
+	Url            string   `yaml:"url"`
+	Method         string   `yaml:"method"`
+	Headers        []Header `yaml:"headers"`
+	ResponseStruct string   `yaml:"responseStruct"`
+	response       []byte   `yaml:"response"`
 }
 
 type Header struct {
