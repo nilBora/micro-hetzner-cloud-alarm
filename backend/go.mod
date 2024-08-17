@@ -5,6 +5,7 @@ go 1.22.4
 require (
 	github.com/go-pkgz/lgr v0.11.1
 	github.com/jessevdk/go-flags v1.6.1
+	github.com/looplab/fsm v1.0.2
 	github.com/nilBora/bolt v1.3.1
 	gopkg.in/yaml.v2 v2.4.0
 )

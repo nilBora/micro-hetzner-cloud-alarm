@@ -60,6 +60,10 @@ func main() {
 		StorePath: opts.StoragePath,
 	}
 
+	for _, transition := range cnf.Workflow.Transitions {
+		log.Printf("[INFO] %v", transition)
+	}
+
 	sec.JBolt = sec.NewStore()
 
 	httpClient := http.Client{}
