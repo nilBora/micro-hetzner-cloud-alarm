@@ -40,6 +40,11 @@ type Task struct {
 	Store          string   `yaml:"store,omitempty"`
 }
 
+type Response struct {
+	Key  string
+	Data string
+}
+
 type Header struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
@@ -61,13 +66,16 @@ type WorkflowFSM struct {
 }
 
 // FetchFromHetzner fetches data from Hetzner API
-func (wf *WorkflowFSM) FetchFromHetzner(task Task) {
+func (wf *WorkflowFSM) FetchFromHetzner(task Task) CloudServers {
 	log.Println("Fetching data from Hetzner API...")
+
+	cloudServers := CloudServers{}
+
 	client := &http.Client{}
 	req, err := http.NewRequest(task.Method, task.URL, nil)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return cloudServers
 	}
 
 	for _, header := range task.Headers {
@@ -77,32 +85,35 @@ func (wf *WorkflowFSM) FetchFromHetzner(task Task) {
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return cloudServers
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return cloudServers
 	}
 
-	cloudServers := CloudServers{}
 	if err := json.Unmarshal(body, &cloudServers); err != nil {
 		fmt.Println("Error unmarshalling response:", err)
-		return
+		return cloudServers
 	}
 
 	log.Println(cloudServers)
 
 	wf.Data[task.ResponseStruct] = cloudServers
+	wf.Data["fetchResult"] = cloudServers
 	fmt.Println("Fetched data from Hetzner API.")
+
+	return cloudServers
 }
 
 // SaveInStore saves the data to a store (for example, a file)
-func (wf *WorkflowFSM) SaveInStore(task Task) {
+func (wf *WorkflowFSM) SaveInStore(task Task, response interface{}) {
 	log.Printf("[INFO] Saving data ...")
-	data, ok := wf.Data[task.ResponseStruct]
+	log.Printf("[INFO] Prev Response: %v", response)
+	data, ok := wf.Data["fetchResult"]
 	if !ok {
 		fmt.Println("No data found to save")
 		return
@@ -141,7 +152,7 @@ func main() {
 		fmt.Printf("Error unmarshalling YAML file: %v\n", err)
 		return
 	}
-	log.Printf("[INFO] Worflow: %v", config)
+	//log.Printf("[INFO] Worflow: %v", config)
 	workflow = config.Workflow
 	workflowFSM := &WorkflowFSM{
 		Workflow: workflow,
@@ -162,14 +173,24 @@ func main() {
 		"start",
 		fsmEvents,
 		fsm.Callbacks{
-			"fetch_from_hetzner": func(ctx context.Context, e *fsm.Event) {
-				task := getTaskByName(workflow.Tasks, "fetch_from_hetzner")
-				workflowFSM.FetchFromHetzner(task)
-				workflowFSM.StateMachine.Event(ctx, "save_in_store")
+			"fetching": func(ctx context.Context, e *fsm.Event) {
+				log.Printf("In Callback fetch_from_hetzner...\n")
+				log.Printf("Current state: %v\n", e.FSM.Current())
+				task := getTaskByName(workflow.Tasks, e.FSM.Current())
+				rersult := workflowFSM.FetchFromHetzner(task)
+
+				fmt.Println("after_scan: " + e.FSM.Current())
+				err := workflowFSM.StateMachine.Event(ctx, "fetch", rersult)
+				if err != nil {
+					fmt.Println("Error running FSM:", err)
+				}
+				log.Printf("END Callback fetch_from_hetzner\n")
 			},
-			"save_in_store": func(_ context.Context, e *fsm.Event) {
-				task := getTaskByName(workflow.Tasks, "save_in_store")
-				workflowFSM.SaveInStore(task)
+			"saving": func(_ context.Context, e *fsm.Event) {
+				response := e.Args[0]
+				log.Printf("In Callback save_in_store...\n")
+				task := getTaskByName(workflow.Tasks, e.FSM.Current())
+				workflowFSM.SaveInStore(task, response)
 			},
 		},
 	)
@@ -180,11 +201,21 @@ func main() {
 	// The file will be named as the store specified in the task
 	// The data will be saved in JSON format
 	// The data will be saved in the same directory as the binary
-	err = workflowFSM.StateMachine.Event(ctx, "start")
+
+	fmt.Println("1:" + workflowFSM.StateMachine.Current())
+	err = workflowFSM.StateMachine.Event(ctx, "run")
 	if err != nil {
 		fmt.Println("Error running FSM:", err)
 		return
 	}
+
+	fmt.Println("2:" + workflowFSM.StateMachine.Current())
+
+	// err = workflowFSM.StateMachine.Event(ctx, "fetch")
+	// if err != nil {
+	// 	fmt.Println("Error running FSM:", err)
+	// 	return
+	// }
 
 	fmt.Println("Workflow completed successfully.")
 }
