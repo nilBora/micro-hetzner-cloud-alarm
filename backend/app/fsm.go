@@ -136,6 +136,17 @@ func (wf *WorkflowFSM) SaveInStore(task Task, response interface{}) {
 	fmt.Println("Data saved to", task.Store+".json")
 }
 
+func (wf *WorkflowFSM) CheckResponse() {
+	log.Println("Checking response...")
+	data, ok := wf.Data["fetchResult"]
+	if !ok {
+		fmt.Println("No data found to check")
+		return
+	}
+
+	fmt.Println("Data:", data)
+}
+
 func main() {
 	ctx := context.Background()
 	// Step 1: Read and parse the YAML file
@@ -185,6 +196,20 @@ func main() {
 					fmt.Println("Error running FSM:", err)
 				}
 				log.Printf("END Callback fetch_from_hetzner\n")
+			},
+			"checking": func(ctx context.Context, e *fsm.Event) {
+				log.Printf("In Callback check_response...\n")
+				log.Printf("Current state: %v\n", e.FSM.Current())
+				//task := getTaskByName(workflow.Tasks, e.FSM.Current())
+				response := e.Args[0]
+				workflowFSM.CheckResponse()
+
+				err := workflowFSM.StateMachine.Event(ctx, "check", response)
+				if err != nil {
+					fmt.Println("Error running FSM:", err)
+				}
+
+				log.Printf("END Callback check_response\n")
 			},
 			"saving": func(_ context.Context, e *fsm.Event) {
 				response := e.Args[0]
