@@ -1,4 +1,4 @@
-package main
+package workflow
 
 import (
 	"context"
@@ -147,7 +147,7 @@ func (wf *WorkflowFSM) CheckResponse() {
 	fmt.Println("Data:", data)
 }
 
-func main() {
+func LoadWorkflow() {
 	ctx := context.Background()
 	// Step 1: Read and parse the YAML file
 	yamlFile, err := ioutil.ReadFile("workflow.yml")
