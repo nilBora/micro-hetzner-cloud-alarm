@@ -39,7 +39,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	workflow.LoadWorkflow()
+	callbacks := workflow.Callbacks{
+		"fetching": func() {
+			log.Printf("[INFO] Fetching data ...")
+		},
+	}
+	workflow.LoadWorkflow(callbacks)
 
 	// cnf, err := config.LoadConfig(opts.Config)
 	// if err != nil {
