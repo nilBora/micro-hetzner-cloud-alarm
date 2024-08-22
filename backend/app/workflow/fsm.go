@@ -14,6 +14,8 @@ import (
 	"github.com/looplab/fsm"
 )
 
+type Callbacks map[string]func()
+
 type Config struct {
 	Workflow Workflow `yaml:"workflow"`
 }
@@ -147,7 +149,7 @@ func (wf *WorkflowFSM) CheckResponse() {
 	fmt.Println("Data:", data)
 }
 
-func LoadWorkflow() {
+func LoadWorkflow(callbacks Callbacks) {
 	ctx := context.Background()
 	// Step 1: Read and parse the YAML file
 	yamlFile, err := ioutil.ReadFile("workflow.yml")
@@ -221,11 +223,6 @@ func LoadWorkflow() {
 	)
 
 	// Step 3: Run the FSM
-	// The FSM will transition from start -> fetch_from_hetzner -> save_in_store
-	// The data fetched from Hetzner API will be saved in a file
-	// The file will be named as the store specified in the task
-	// The data will be saved in JSON format
-	// The data will be saved in the same directory as the binary
 
 	fmt.Println("1:" + workflowFSM.StateMachine.Current())
 	err = workflowFSM.StateMachine.Event(ctx, "run")
