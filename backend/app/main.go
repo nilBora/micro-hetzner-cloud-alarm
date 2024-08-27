@@ -9,13 +9,27 @@ import (
 	//"micro-tetzner-cloud-alarm/v2/app/task"
 
 	//"net/http"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"micro-tetzner-cloud-alarm/v2/app/workflow"
+	"net/http"
 	"os"
 	"time"
 
 	log "github.com/go-pkgz/lgr"
 	"github.com/jessevdk/go-flags"
 )
+
+// CloudServers is the response structure for Hetzner API
+type CloudServers struct {
+	Servers []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	} `json:"servers"`
+}
+
+type MyWorkflow workflow.UserWorkflow
 
 type Options struct {
 	Config      string        `short:"c" long:"config" env:"CONFIG" default:"config.yml" description:"config file"`
@@ -44,7 +58,10 @@ func main() {
 			log.Printf("[INFO] Fetching data ...")
 		},
 	}
-	workflow.LoadWorkflow(callbacks)
+
+	fw := workflow.UserWorkflow{}
+
+	workflow.LoadWorkflow(fw, callbacks)
 
 	// cnf, err := config.LoadConfig(opts.Config)
 	// if err != nil {
@@ -133,6 +150,53 @@ func main() {
 	// 	}
 	// }
 
+}
+
+func FetchFromHetzner(task workflow.Task) CloudServers {
+	log.Printf("[INFO] Fetching data from Hetzner API...")
+
+	cloudServers := CloudServers{}
+
+	client := &http.Client{}
+	req, err := http.NewRequest(task.Method, task.URL, nil)
+	if err != nil {
+		fmt.Println(err)
+		return cloudServers
+	}
+
+	for _, header := range task.Headers {
+		req.Header.Add(header.Name, header.Value)
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return cloudServers
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return cloudServers
+	}
+
+	if err := json.Unmarshal(body, &cloudServers); err != nil {
+		fmt.Println("Error unmarshalling response:", err)
+		return cloudServers
+	}
+
+	log.Printf("[INFO] %d", cloudServers)
+
+	//	wf.Data[task.ResponseStruct] = cloudServers
+	//	wf.Data["fetchResult"] = cloudServers
+	fmt.Println("Fetched data from Hetzner API.")
+
+	return cloudServers
+}
+
+func (wf MyWorkflow) fetch() {
+	log.Printf("[INFO] Fetching data ...")
 }
 
 func setupLog(dbg bool) {

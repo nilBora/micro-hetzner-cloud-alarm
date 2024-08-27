@@ -16,6 +16,8 @@ import (
 
 type Callbacks map[string]func()
 
+type UserWorkflow struct{}
+
 type Config struct {
 	Workflow Workflow `yaml:"workflow"`
 }
@@ -149,7 +151,7 @@ func (wf *WorkflowFSM) CheckResponse() {
 	fmt.Println("Data:", data)
 }
 
-func LoadWorkflow(callbacks Callbacks) {
+func LoadWorkflow(wf UserWorkflow, callbacks Callbacks) {
 	ctx := context.Background()
 	// Step 1: Read and parse the YAML file
 	yamlFile, err := ioutil.ReadFile("workflow.yml")
