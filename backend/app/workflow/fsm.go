@@ -37,6 +37,8 @@ type Transition struct {
 type Task struct {
 	Name           string   `yaml:"name"`
 	Type           string   `yaml:"type"`
+	Event          string   `yaml:"event"`
+	Func           string   `yaml:"func"`
 	URL            string   `yaml:"url,omitempty"`
 	Method         string   `yaml:"method,omitempty"`
 	Headers        []Header `yaml:"headers,omitempty"`
@@ -193,9 +195,8 @@ func LoadWorkflow(wf UserWorkflow, callbacks Callbacks) {
 				log.Printf("Current state: %v\n", e.FSM.Current())
 				task := getTaskByName(workflow.Tasks, e.FSM.Current())
 				rersult := workflowFSM.FetchFromHetzner(task)
-
 				fmt.Println("after_scan: " + e.FSM.Current())
-				err := workflowFSM.StateMachine.Event(ctx, "fetch", rersult)
+				err := workflowFSM.StateMachine.Event(ctx, task.Event, rersult)
 				if err != nil {
 					fmt.Println("Error running FSM:", err)
 				}
