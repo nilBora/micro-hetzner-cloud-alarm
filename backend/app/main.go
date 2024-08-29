@@ -29,7 +29,12 @@ type CloudServers struct {
 	} `json:"servers"`
 }
 
-type MyWorkflow workflow.UserWorkflow
+type MyWorkflow struct {
+}
+
+type MyWorkflowInterface interface {
+	FetchFromHetzner(task workflow.Task) CloudServers
+}
 
 type Options struct {
 	Config      string        `short:"c" long:"config" env:"CONFIG" default:"config.yml" description:"config file"`
@@ -54,14 +59,21 @@ func main() {
 	}
 
 	callbacks := workflow.Callbacks{
-		"fetching": func() {
-			log.Printf("[INFO] Fetching data ...")
+		// "fetching": func() {
+		// 	log.Printf("[INFO] Fetching data ...")
+		// },
+		"FetchFromHetzner": func(args ...interface{}) {
+			task := args[0].(workflow.Task)
+			log.Printf("[INFO] Fetching data from Hetzner ... %s", task.Name)
+			//log.Printf
 		},
 	}
 
-	fw := workflow.UserWorkflow{}
+	myFw := workflow.UserWorkflow{}
 
-	workflow.LoadWorkflow(fw, callbacks)
+	myFw.Callbacks = callbacks
+
+	workflow.LoadWorkflow(myFw, callbacks)
 
 	// cnf, err := config.LoadConfig(opts.Config)
 	// if err != nil {
@@ -152,7 +164,7 @@ func main() {
 
 }
 
-func FetchFromHetzner(task workflow.Task) CloudServers {
+func (mw MyWorkflow) FetchFromHetzner(task workflow.Task) CloudServers {
 	log.Printf("[INFO] Fetching data from Hetzner API...")
 
 	cloudServers := CloudServers{}
@@ -195,8 +207,8 @@ func FetchFromHetzner(task workflow.Task) CloudServers {
 	return cloudServers
 }
 
-func (wf MyWorkflow) fetch() {
-	log.Printf("[INFO] Fetching data ...")
+func (mw MyWorkflow) Ping() {
+	log.Printf("[INFO] Pinging ...")
 }
 
 func setupLog(dbg bool) {
