@@ -14,7 +14,7 @@ import (
 	"github.com/looplab/fsm"
 )
 
-type Callbacks map[string]func(args ...interface{})
+type Callbacks map[string]func(args ...interface{}) interface{}
 
 type UserWorkflow struct {
 	Callbacks Callbacks
@@ -199,7 +199,7 @@ func LoadWorkflow(wf UserWorkflow, callbacks Callbacks) {
 				rersult := workflowFSM.FetchFromHetzner(task)
 				fmt.Println("after_scan: " + e.FSM.Current())
 
-				wf.Callbacks["FetchFromHetzner"](task, ctx, e)
+				//wf.Callbacks[task.Func](task, ctx, e)
 
 				err := workflowFSM.StateMachine.Event(ctx, task.Event, rersult)
 				if err != nil {

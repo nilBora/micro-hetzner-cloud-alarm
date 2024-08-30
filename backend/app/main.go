@@ -62,10 +62,11 @@ func main() {
 		// "fetching": func() {
 		// 	log.Printf("[INFO] Fetching data ...")
 		// },
-		"FetchFromHetzner": func(args ...interface{}) {
+		"FetchFromHetzner": func(args ...interface{}) interface{} {
 			task := args[0].(workflow.Task)
 			log.Printf("[INFO] Fetching data from Hetzner ... %s", task.Name)
-			//log.Printf
+
+			return CloudServers{}
 		},
 	}
 
@@ -164,7 +165,7 @@ func main() {
 
 }
 
-func (mw MyWorkflow) FetchFromHetzner(task workflow.Task) CloudServers {
+func FetchFromHetzner(task workflow.Task) CloudServers {
 	log.Printf("[INFO] Fetching data from Hetzner API...")
 
 	cloudServers := CloudServers{}
