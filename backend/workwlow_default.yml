@@ -1,0 +1,29 @@
+workflow:
+  stages:
+    - fetchFromHetzner
+    - checkInStore
+    - saving
+    - sendingToSlack
+
+  tasks:
+    - name: "fetchFromHetzner"
+      default: "fatch"
+      store: "in_memory"
+      type: "fetch"
+      url: "https://api.hetzner.cloud/v1/servers"
+      method: "GET"
+      headers:
+        - name: "Content-Type"
+          value: "application/json"
+        - name: "Authorization"
+          value: "Bearer 123"
+      responseStruct: "CloudServers"
+    - checkInStore:
+        type: "in_memoty"
+        store: "hetzner_cloud_servers"
+    - name: "saving"
+      type: "in_memoty"
+      store: "hetzner_cloud_servers"
+    - name: "sendingToSlack"
+      type: "messenger_slack"
+      url: "https://hooks.slack.com/services/123/123/123"
