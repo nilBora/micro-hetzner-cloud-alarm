@@ -1,4 +1,4 @@
-package workflow
+package fsm
 
 import (
 	"context"
@@ -155,7 +155,7 @@ func (wf *WorkflowFSM) CheckResponse() {
 	fmt.Println("Data:", data)
 }
 
-func LoadWorkflow(wf UserWorkflow, callbacks Callbacks) {
+func LoadWorkflow(callbacks Callbacks) {
 	ctx := context.Background()
 	// Step 1: Read and parse the YAML file
 	yamlFile, err := ioutil.ReadFile("workflow.yml")
@@ -198,8 +198,6 @@ func LoadWorkflow(wf UserWorkflow, callbacks Callbacks) {
 				task := getTaskByName(workflow.Tasks, e.FSM.Current())
 				rersult := workflowFSM.FetchFromHetzner(task)
 				fmt.Println("after_scan: " + e.FSM.Current())
-
-				//wf.Callbacks[task.Func](task, ctx, e)
 
 				err := workflowFSM.StateMachine.Event(ctx, task.Event, rersult)
 				if err != nil {

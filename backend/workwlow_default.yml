@@ -7,7 +7,8 @@ workflow:
 
   tasks:
     - name: "fetchFromHetzner"
-      default: "fatch"
+      func: "fetchFromHetzner"
+      default: "fetch"
       store: "in_memory"
       type: "fetch"
       url: "https://api.hetzner.cloud/v1/servers"
@@ -19,8 +20,9 @@ workflow:
           value: "Bearer 123"
       responseStruct: "CloudServers"
     - checkInStore:
+        func: "checkInStore"
         type: "in_memoty"
-        store: "hetzner_cloud_servers"
+        store: "fetchFromHetzner"
     - name: "saving"
       type: "in_memoty"
       store: "hetzner_cloud_servers"

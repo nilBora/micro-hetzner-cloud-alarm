@@ -8,12 +8,18 @@ import (
 
 type Config struct {
 	Service  []Service `yaml:"services"`
-	Task     []Task    `yaml:"tasks"`
+	Tasks    []Task    `yaml:"tasks"`
 	Workflow Workflow  `yaml:"workflow"`
 }
 
 type Workflow struct {
 	Transitions []Transition `yaml:"transitions"`
+	Stages      []string     `yaml:"stages"`
+	Tasks       []Task       `yaml:"tasks"`
+}
+
+type Stage struct {
+	Name string `yaml:"name"`
 }
 
 type Transition struct {
@@ -32,12 +38,14 @@ type Service struct {
 
 type Task struct {
 	Name           string   `yaml:"name"`
+	Func           string   `yaml:"func"`
 	Type           string   `yaml:"type"`
 	Url            string   `yaml:"url"`
 	Method         string   `yaml:"method"`
 	Headers        []Header `yaml:"headers"`
 	ResponseStruct string   `yaml:"responseStruct"`
 	response       []byte   `yaml:"response"`
+	Store          string   `yaml:"store"`
 }
 
 type Header struct {
