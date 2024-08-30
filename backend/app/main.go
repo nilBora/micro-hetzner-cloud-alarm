@@ -4,7 +4,7 @@ import (
 
 	//"encoding/json"
 	//"io"
-	//"micro-tetzner-cloud-alarm/v2/app/config"
+	"micro-tetzner-cloud-alarm/v2/app/config"
 	//bstore "micro-tetzner-cloud-alarm/v2/app/store"
 	//"micro-tetzner-cloud-alarm/v2/app/task"
 
@@ -29,15 +29,8 @@ type CloudServers struct {
 	} `json:"servers"`
 }
 
-type MyWorkflow struct {
-}
-
-type MyWorkflowInterface interface {
-	FetchFromHetzner(task workflow.Task) CloudServers
-}
-
 type Options struct {
-	Config      string        `short:"c" long:"config" env:"CONFIG" default:"config.yml" description:"config file"`
+	Config      string        `short:"c" long:"config" env:"CONFIG" default:"workflow.yml" description:"config file"`
 	Dbg         bool          `long:"dbg" env:"DEBUG" description:"show debug info"`
 	Frequency   time.Duration `long:"frequency" env:"FREQUENCY" default:"10m" description:"task scheduler frequency in minutes"`
 	StoragePath string        `short:"s" long:"storage_path" default:"/var/tmp/jtrw_hetzner_cloud.db" description:"Storage Path"`
@@ -58,31 +51,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	callbacks := workflow.Callbacks{
-		// "fetching": func() {
-		// 	log.Printf("[INFO] Fetching data ...")
-		// },
-		"FetchFromHetzner": func(args ...interface{}) interface{} {
-			task := args[0].(workflow.Task)
-			log.Printf("[INFO] Fetching data from Hetzner ... %s", task.Name)
-
-			return CloudServers{}
-		},
+	cnf, err := config.LoadConfig(opts.Config)
+	if err != nil {
+		log.Printf("[FATAL] %v", err)
+		os.Exit(1)
 	}
 
-	myFw := workflow.UserWorkflow{}
-
-	myFw.Callbacks = callbacks
-
-	workflow.LoadWorkflow(myFw, callbacks)
-
-	// cnf, err := config.LoadConfig(opts.Config)
-	// if err != nil {
-	// 	log.Printf("[FATAL] %v", err)
-	// 	os.Exit(1)
-	// }
-
 	setupLog(opts.Dbg)
+
+	callbacks := workflow.Callbacks{
+		"fetchFromHetzner": func(args ...interface{}) interface{} {
+			task := args[0].(config.Task)
+			return fetchFromHetzner(task)
+		},
+		"checkInStore": func(args ...interface{}) interface{} {
+			task := args[0].(config.Task)
+			result := args[1].(interface{})
+			log.Printf("[INFO] Checking in store %v", result)
+			return checkInStore(task)
+		},
+	}
+	fw := workflow.Workflow{
+		Callbacks: callbacks,
+	}
+	fw.Run(cnf)
 
 	// ctx, cancel := context.WithCancel(context.Background())
 	// go func() {
@@ -165,16 +157,20 @@ func main() {
 
 }
 
-func FetchFromHetzner(task workflow.Task) CloudServers {
+func fetchFromHetzner(task config.Task) interface{} {
 	log.Printf("[INFO] Fetching data from Hetzner API...")
-
-	cloudServers := CloudServers{}
+	st := struct {
+		Servers []struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		} `json:"servers"`
+	}{}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(task.Method, task.URL, nil)
+	req, err := http.NewRequest(task.Method, task.Url, nil)
 	if err != nil {
 		fmt.Println(err)
-		return cloudServers
+		return st
 	}
 
 	for _, header := range task.Headers {
@@ -184,32 +180,38 @@ func FetchFromHetzner(task workflow.Task) CloudServers {
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return cloudServers
+		return st
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
-		return cloudServers
+		return st
 	}
 
-	if err := json.Unmarshal(body, &cloudServers); err != nil {
+	if err := json.Unmarshal(body, &st); err != nil {
 		fmt.Println("Error unmarshalling response:", err)
-		return cloudServers
+		return st
 	}
 
-	log.Printf("[INFO] %d", cloudServers)
+	log.Printf("[INFO] %d", st)
 
 	//	wf.Data[task.ResponseStruct] = cloudServers
 	//	wf.Data["fetchResult"] = cloudServers
 	fmt.Println("Fetched data from Hetzner API.")
 
-	return cloudServers
+	return st
 }
 
-func (mw MyWorkflow) Ping() {
-	log.Printf("[INFO] Pinging ...")
+func checkInStore(task config.Task) interface{} {
+	log.Printf("[INFO] Checking in store...")
+	res := struct {
+		Result string `json:"result"`
+	}{}
+
+	res.Result = "OK"
+	return res
 }
 
 func setupLog(dbg bool) {
