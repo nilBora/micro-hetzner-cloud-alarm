@@ -14,9 +14,11 @@ type Workflow struct {
 type Callbacks map[string]func(args ...interface{}) interface{}
 
 var result interface{}
+var results map[string]interface{}
 
 func (wf *Workflow) Run(cnf config.Config) {
 	log.Printf("[INFO] Running workflow\n")
+	wf.Result = map[string]interface{}{}
 	for _, stage := range cnf.Workflow.Stages {
 		log.Printf("[INFO] Stage: %s\n", stage)
 		task := getTask(cnf.Workflow.Tasks, stage)
@@ -33,6 +35,9 @@ func (wf *Workflow) Run(cnf config.Config) {
 				log.Printf("[INFO] Type: %v\n", writerType)
 				log.Printf("[INFO] Result: %v\n", res)
 				//result = res
+				//results = map[string]interface{}{}
+				//results[task.Name] = result
+
 				wf.Result[task.Name] = result
 			}
 
