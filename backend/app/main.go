@@ -66,8 +66,8 @@ func main() {
 		},
 		"checkInStore": func(args ...interface{}) interface{} {
 			task := args[0].(config.Task)
-			result := args[1].(interface{})
-			log.Printf("[INFO] Checking in store %v", result)
+			//result := args[1].(interface{})
+			//log.Printf("[INFO] Checking in store %v", result)
 			return checkInStore(task)
 		},
 	}
@@ -157,14 +157,9 @@ func main() {
 
 }
 
-func fetchFromHetzner(task config.Task) interface{} {
+func fetchFromHetzner(task config.Task) CloudServers {
 	log.Printf("[INFO] Fetching data from Hetzner API...")
-	st := struct {
-		Servers []struct {
-			ID   int    `json:"id"`
-			Name string `json:"name"`
-		} `json:"servers"`
-	}{}
+	st := CloudServers{}
 
 	client := &http.Client{}
 	req, err := http.NewRequest(task.Method, task.Url, nil)
