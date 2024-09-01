@@ -66,9 +66,9 @@ func main() {
 		},
 		"checkInStore": func(args ...interface{}) interface{} {
 			task := args[0].(config.Task)
-			//result := args[1].(interface{})
-			//log.Printf("[INFO] Checking in store %v", result)
-			return checkInStore(task)
+			result := args[1].(CloudServers)
+			log.Printf("[INFO] Checking in store %v", result)
+			return checkInStore(task, result)
 		},
 	}
 	fw := workflow.Workflow{
@@ -199,7 +199,7 @@ func fetchFromHetzner(task config.Task) CloudServers {
 	return st
 }
 
-func checkInStore(task config.Task) interface{} {
+func checkInStore(task config.Task, servers CloudServers) interface{} {
 	log.Printf("[INFO] Checking in store...")
 	res := struct {
 		Result string `json:"result"`
