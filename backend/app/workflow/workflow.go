@@ -24,8 +24,6 @@ func (wf *Workflow) Run(cnf config.Config) {
 		task := getTask(cnf.Workflow.Tasks, stage)
 		if wf.Callbacks[task.Func] != nil {
 			log.Printf("[INFO] Task: %s\n", task.Name)
-			log.Printf("[INFO] Store Name: %s\n", task.Store)
-			log.Printf("[INFO] RES: %v", wf.Result)
 			if wf.Result[task.Store] != nil {
 				store := wf.Result[task.Store]
 				log.Printf("[INFO] Store: %v\n", store)
@@ -36,11 +34,8 @@ func (wf *Workflow) Run(cnf config.Config) {
 				writerType := reflect.TypeOf(res)
 				log.Printf("[INFO] Type: %v\n", writerType)
 				log.Printf("[INFO] Result: %v\n", res)
-				//result = res
-				//results = map[string]interface{}{}
-				//results[task.Name] = result
 
-				wf.Result[task.Name] = result
+				wf.Result[task.Name] = res
 			}
 
 		}
