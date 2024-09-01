@@ -24,10 +24,12 @@ func (wf *Workflow) Run(cnf config.Config) {
 		task := getTask(cnf.Workflow.Tasks, stage)
 		if wf.Callbacks[task.Func] != nil {
 			log.Printf("[INFO] Task: %s\n", task.Name)
+			log.Printf("[INFO] Store Name: %s\n", task.Store)
+			log.Printf("[INFO] RES: %v", wf.Result)
 			if wf.Result[task.Store] != nil {
 				store := wf.Result[task.Store]
 				log.Printf("[INFO] Store: %v\n", store)
-				//wf.result[task.Name] = wf.Callbacks[task.Func](task, store)
+				wf.Result[task.Name] = wf.Callbacks[task.Func](task, store)
 			} else {
 				log.Printf("[INFO] Callback: %s\n", task.Func)
 				res := wf.Callbacks[task.Func](task)
