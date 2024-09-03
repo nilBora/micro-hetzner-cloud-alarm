@@ -3,7 +3,6 @@ package workflow
 import (
 	"log"
 	"micro-tetzner-cloud-alarm/v2/app/config"
-	"reflect"
 )
 
 type Workflow struct {
@@ -30,14 +29,8 @@ func (wf *Workflow) Run(cnf config.Config) {
 				wf.Result[task.Name] = wf.Callbacks[task.Func](task, store)
 			} else {
 				log.Printf("[INFO] Callback: %s\n", task.Func)
-				res := wf.Callbacks[task.Func](task)
-				writerType := reflect.TypeOf(res)
-				log.Printf("[INFO] Type: %v\n", writerType)
-				log.Printf("[INFO] Result: %v\n", res)
-
-				wf.Result[task.Name] = res
+				wf.Result[task.Name] = wf.Callbacks[task.Func](task)
 			}
-
 		}
 	}
 

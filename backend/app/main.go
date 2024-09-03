@@ -5,7 +5,8 @@ import (
 	//"encoding/json"
 	//"io"
 	"micro-tetzner-cloud-alarm/v2/app/config"
-	//bstore "micro-tetzner-cloud-alarm/v2/app/store"
+	bstore "micro-tetzner-cloud-alarm/v2/app/store"
+
 	//"micro-tetzner-cloud-alarm/v2/app/task"
 
 	//"net/http"
@@ -59,6 +60,12 @@ func main() {
 
 	setupLog(opts.Dbg)
 
+	sec := bstore.Store{
+		StorePath: opts.StoragePath,
+	}
+
+	sec.JBolt = sec.NewStore()
+
 	callbacks := workflow.Callbacks{
 		"fetchFromHetzner": func(args ...interface{}) interface{} {
 			task := args[0].(config.Task)
@@ -68,7 +75,7 @@ func main() {
 			task := args[0].(config.Task)
 			result := args[1].(CloudServers)
 			log.Printf("[INFO] Checking in store %v", result)
-			return checkInStore(task, result)
+			return checkInStore(task, result, sec)
 		},
 	}
 	fw := workflow.Workflow{
@@ -85,15 +92,9 @@ func main() {
 	// 	cancel()
 	// }()
 
-	// sec := bstore.Store{
-	// 	StorePath: opts.StoragePath,
-	// }
-
 	// for _, transition := range cnf.Workflow.Transitions {
 	// 	log.Printf("[INFO] %v", transition)
 	// }
-
-	// sec.JBolt = sec.NewStore()
 
 	// httpClient := http.Client{}
 	// for _, task := range cnf.Task {
@@ -199,7 +200,26 @@ func fetchFromHetzner(task config.Task) CloudServers {
 	return st
 }
 
-func checkInStore(task config.Task, servers CloudServers) interface{} {
+func checkInStore(task config.Task, servers CloudServers, sec bstore.Store) interface{} {
+	saveServers := sec.Get("tasks", task.Name)
+
+	if len(saveServers) > 0 {
+		str, _ := json.Marshal(servers)
+
+		if string(str) == saveServers {
+			log.Printf("[INFO] No changes in store")
+			return nil
+		}
+		log.Printf("[INFO] Changes detected in store")
+
+		sec.Set("tasks", task.Name, string(str))
+
+		return nil
+	}
+
+	str, _ := json.Marshal(servers)
+	sec.Set("tasks", task.Name, string(str))
+
 	log.Printf("[INFO] Checking in store...")
 	res := struct {
 		Result string `json:"result"`
