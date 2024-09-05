@@ -92,54 +92,6 @@ func main() {
 	// 	cancel()
 	// }()
 
-	// for _, transition := range cnf.Workflow.Transitions {
-	// 	log.Printf("[INFO] %v", transition)
-	// }
-
-	// httpClient := http.Client{}
-	// for _, task := range cnf.Task {
-	// 	if task.Type == "fetch" {
-	// 		req, err := http.NewRequest("GET", task.Url, nil)
-	// 		if err != nil {
-	// 			log.Printf("[ERROR] %s", err)
-	// 			continue
-	// 		}
-	// 		for _, header := range task.Headers {
-	// 			log.Printf("[INFO] %s", header)
-	// 			req.Header.Set(header.Name, header.Value)
-	// 		}
-	// 		//req.Header.Set("Authorization", "Bearer "+service.Token)
-
-	// 		resp, err := httpClient.Do(req)
-	// 		if err != nil {
-	// 			log.Printf("[ERROR] %s", err)
-	// 			continue
-	// 		}
-
-	// 		defer resp.Body.Close()
-
-	// 		body, err := io.ReadAll(resp.Body)
-	// 		if err != nil {
-	// 			log.Printf("[ERROR] %s", err)
-	// 			continue
-	// 		}
-	// 		response := JSON{}
-
-	// 		json.Unmarshal(body, &response)
-
-	// 		//log.Printf("[INFO] %s", body)
-
-	// 	}
-	// }
-
-	// t := task.Task{
-	// 	Owner:   task.TASK_OWNER_SYSTEM,
-	// 	Config:  cnf,
-	// 	Context: ctx,
-	// 	Store:   sec,
-	// }
-	// t.Run()
-
 	// for {
 	// 	select {
 	// 	case <-ctx.Done():
