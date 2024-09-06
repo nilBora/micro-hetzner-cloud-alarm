@@ -22,10 +22,13 @@ func (wf *Workflow) Run(cnf config.Config) {
 		log.Printf("[INFO] Stage: %s\n", stage)
 		task := getTask(cnf.Workflow.Tasks, stage)
 		if wf.Callbacks[task.Func] != nil {
-			log.Printf("[INFO] Task: %s\n", task.Name)
 			if wf.Result[task.Store] != nil {
 				store := wf.Result[task.Store]
-				log.Printf("[INFO] Store: %v\n", store)
+				if store == nil {
+					log.Printf("[ERROR] Store is nil\n")
+					wf.Result[task.Name] = wf.Callbacks[task.Func](task)
+					continue
+				}
 				wf.Result[task.Name] = wf.Callbacks[task.Func](task, store)
 			} else {
 				log.Printf("[INFO] Callback: %s\n", task.Func)
