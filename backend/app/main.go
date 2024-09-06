@@ -25,8 +25,15 @@ import (
 // CloudServers is the response structure for Hetzner API
 type CloudServers struct {
 	Servers []struct {
-		ID   int    `json:"id"`
-		Name string `json:"name"`
+		Id        int    `json:"id"`
+		Name      string `json:"name"`
+		Status    string `json:"status"`
+		CreatedAt string `json:"created_at"`
+		PublicNet struct {
+			Ipv4 struct {
+				Ip string `json:"ip"`
+			} `json:"ipv4"`
+		} `json:"public_net"`
 	} `json:"servers"`
 }
 
@@ -76,6 +83,18 @@ func main() {
 			result := args[1].(CloudServers)
 			log.Printf("[INFO] Checking in store %v", result)
 			return checkInStore(task, result, sec)
+		},
+		"sendingToSlack": func(args ...interface{}) interface{} {
+			task := args[0].(config.Task)
+
+			if len(args) <= 1 || args[1] == nil {
+				log.Printf("[ERROR] No data to send to slack")
+				return nil
+			}
+			result := args[1].(CloudServers)
+			log.Printf("[INFO] sendingToSlack %v, %v", task, result)
+
+			return nil
 		},
 	}
 	fw := workflow.Workflow{
@@ -157,28 +176,36 @@ func checkInStore(task config.Task, servers CloudServers, sec bstore.Store) inte
 
 	if len(saveServers) > 0 {
 		str, _ := json.Marshal(servers)
-
 		if string(str) == saveServers {
 			log.Printf("[INFO] No changes in store")
 			return nil
 		}
+
+		storeServers := CloudServers{}
+		if err := json.Unmarshal([]byte(saveServers), &storeServers); err != nil {
+			log.Printf("[ERROR] %v", err)
+			return nil
+
+		}
+		for _, server := range servers.Servers {
+			for _, storeServer := range storeServers.Servers {
+				if server.Id == storeServer.Id {
+					servers.Servers = append(servers.Servers[:0], servers.Servers[1:]...)
+				}
+			}
+		}
+
 		log.Printf("[INFO] Changes detected in store")
 
 		sec.Set("tasks", task.Name, string(str))
 
-		return nil
+		return servers
 	}
 
 	str, _ := json.Marshal(servers)
 	sec.Set("tasks", task.Name, string(str))
 
-	log.Printf("[INFO] Checking in store...")
-	res := struct {
-		Result string `json:"result"`
-	}{}
-
-	res.Result = "OK"
-	return res
+	return nil
 }
 
 func setupLog(dbg bool) {
