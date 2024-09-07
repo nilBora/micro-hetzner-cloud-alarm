@@ -4,8 +4,12 @@ import (
 
 	//"encoding/json"
 	//"io"
+	"context"
 	"micro-tetzner-cloud-alarm/v2/app/config"
 	bstore "micro-tetzner-cloud-alarm/v2/app/store"
+	"micro-tetzner-cloud-alarm/v2/app/task"
+	"os/signal"
+	"syscall"
 
 	//"micro-tetzner-cloud-alarm/v2/app/task"
 
@@ -102,30 +106,30 @@ func main() {
 	}
 	fw.Run(cnf)
 
-	// ctx, cancel := context.WithCancel(context.Background())
-	// go func() {
-	// 	sig := make(chan os.Signal, 1)
-	// 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-	// 	<-sig
-	// 	log.Printf("[WARN] Interrupted signal")
-	// 	cancel()
-	// }()
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+		<-sig
+		log.Printf("[WARN] Interrupted signal")
+		cancel()
+	}()
 
-	// for {
-	// 	select {
-	// 	case <-ctx.Done():
-	// 		log.Printf("[WARN] Canceling current execution")
-	// 		return
-	// 	case <-time.After(opts.Frequency):
-	// 		log.Printf("[INFO] Running task scheduler")
-	// 		t := task.Task{
-	// 			Owner:   task.TASK_OWNER_SYSTEM,
-	// 			Config:  cnf,
-	// 			Context: ctx,
-	// 		}
-	// 		t.Run()
-	// 	}
-	// }
+	for {
+		select {
+		case <-ctx.Done():
+			log.Printf("[WARN] Canceling current execution")
+			return
+		case <-time.After(opts.Frequency):
+			log.Printf("[INFO] Running task scheduler")
+			t := task.Task{
+				Owner:   task.TASK_OWNER_SYSTEM,
+				Config:  cnf,
+				Context: ctx,
+			}
+			t.Run()
+		}
+	}
 
 }
 
@@ -162,10 +166,6 @@ func fetchFromHetzner(task config.Task) CloudServers {
 		return st
 	}
 
-	log.Printf("[INFO] %d", st)
-
-	//	wf.Data[task.ResponseStruct] = cloudServers
-	//	wf.Data["fetchResult"] = cloudServers
 	fmt.Println("Fetched data from Hetzner API.")
 
 	return st
