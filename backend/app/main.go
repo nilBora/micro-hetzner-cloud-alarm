@@ -4,10 +4,10 @@ import (
 
 	//"encoding/json"
 	//"io"
+	"bytes"
 	"context"
 	"micro-tetzner-cloud-alarm/v2/app/config"
 	bstore "micro-tetzner-cloud-alarm/v2/app/store"
-	"micro-tetzner-cloud-alarm/v2/app/task"
 	"os/signal"
 	"syscall"
 
@@ -122,15 +122,9 @@ func main() {
 			return
 		case <-time.After(opts.Frequency):
 			log.Printf("[INFO] Running task scheduler")
-			t := task.Task{
-				Owner:   task.TASK_OWNER_SYSTEM,
-				Config:  cnf,
-				Context: ctx,
-			}
-			t.Run()
+			fw.Run(cnf)
 		}
 	}
-
 }
 
 func fetchFromHetzner(task config.Task) CloudServers {
@@ -206,6 +200,27 @@ func checkInStore(task config.Task, servers CloudServers, sec bstore.Store) inte
 	sec.Set("tasks", task.Name, string(str))
 
 	return nil
+}
+
+func secdToSlack(url string, message string) {
+	log.Printf("[INFO] Sending message to Slack")
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(message)))
+	if err != nil {
+		log.Printf("[ERROR] %v", err)
+		return
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		log.Printf("[ERROR] %v", err)
+		return
+	}
+	defer res.Body.Close()
+
+	log.Printf("[INFO] Message sent to Slack")
 }
 
 func setupLog(dbg bool) {
